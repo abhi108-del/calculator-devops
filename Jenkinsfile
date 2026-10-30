@@ -50,15 +50,22 @@ pipeline {
             steps {
                 sh 'docker compose up -d --build'
                 sh '''
-                    echo "Waiting for the stack to become healthy..."
-                    for i in $(seq 1 15); do
-                        if curl -sf http://host.docker.internal:8090/actuator/health > /dev/null; then
-                            echo "Service is UP"
+                    echo "Waiting for the calculator to become healthy..."
+                    for i in $(seq 1 20); do
+                        status=$(docker inspect --format '{{.State.Health.Status}}' calculator 2>/dev/null || echo none)
+                        if [ "$status" = "healthy" ]; then
+                            echo "Calculator container is healthy"
+                            if docker exec calculator-proxy wget -q -O - http://localhost/actuator/health | grep -q '"status":"UP"'; then
+                                echo "Verified end-to-end through the nginx proxy"
+                            fi
+                            docker compose ps
                             exit 0
                         fi
+                        echo "  status: $status (attempt $i)"
                         sleep 4
                     done
                     echo "Service did not become healthy in time"
+                    docker compose ps
                     exit 1
                 '''
             }
