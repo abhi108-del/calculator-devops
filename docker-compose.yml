@@ -1,0 +1,33 @@
+services:
+  calculator:
+    image: calculator-devops:local
+    container_name: calculator
+    environment:
+      - JAVA_OPTS=-Xmx256m
+    networks:
+      - calcnet
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  proxy:
+    image: nginx:alpine
+    container_name: calculator-proxy
+    ports:
+      - "8090:80"
+    depends_on:
+      calculator:
+        condition: service_healthy
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - calcnet
+    restart: unless-stopped
+
+networks:
+  calcnet:
+    driver: bridge
