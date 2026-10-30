@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE   = "2023108/calculator-devops"
+        IMAGE    = "2023108/calculator-devops"
         REGISTRY = "https://index.docker.io/v1/"
     }
 
@@ -55,6 +55,7 @@ pipeline {
                         status=$(docker inspect --format '{{.State.Health.Status}}' calculator 2>/dev/null || echo none)
                         if [ "$status" = "healthy" ]; then
                             echo "Calculator container is healthy"
+                            sleep 3
                             if docker exec calculator-proxy wget -q -O - http://localhost/actuator/health | grep -q '"status":"UP"'; then
                                 echo "Verified end-to-end through the nginx proxy"
                             fi
@@ -73,6 +74,20 @@ pipeline {
     }
 
     post {
+        success {
+            emailext(
+                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build and deploy succeeded.\n\nImage: ${env.IMAGE}:${env.BUILD_NUMBER}\nBuild URL: ${env.BUILD_URL}",
+                to: 'abhishikth9732@gmail.com'
+            )
+        }
+        failure {
+            emailext(
+                subject: "FAILURE: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: "Build failed. Check the console:\n\n${env.BUILD_URL}console",
+                to: 'abhishikth9732@gmail.com'
+            )
+        }
         always {
             sh 'docker logout || true'
         }
