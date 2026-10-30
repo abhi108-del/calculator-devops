@@ -25,3 +25,4 @@ All endpoints are GET under `/api/v1` and return JSON.
 Dividing by zero or passing a missing/non-numeric parameter returns
 HTTP 400 with a JSON error body.
 
+
