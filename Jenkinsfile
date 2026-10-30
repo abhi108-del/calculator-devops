@@ -48,7 +48,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh 'docker compose up -d'
+                sh 'docker compose up -d --build'
                 sh '''
                     echo "Waiting for the stack to become healthy..."
                     for i in $(seq 1 15); do
